@@ -1,33 +1,33 @@
 import {
-    createCanvas,
-    SKRSContext2D,
-    Image,
     GlobalFonts,
+    SKRSContext2D,
+    createCanvas,
 } from '@napi-rs/canvas';
-import { readFile } from 'fs/promises';
+import { join } from 'path';
 import {
-    icon,
-    uvIndexServeness,
+    applyText,
+    capitaliseFirstLetter,
+    convertToKPH,
     dir,
     font,
-    timestampConverter,
-    capitaliseFirstLetter,
-    grabData,
     getDaytimeAndColours,
-    convertToKPH,
-    applyText,
-    roundTo2,
-    rain,
-    isImperial,
     getTempUnitForCountry,
+    grabData,
+    icon,
+    isImperial,
+    rain,
+    roundTo2,
+    timestampConverter,
+    uvIndexServeness,
 } from './utils/helperFunctions';
 import {
-    OpenWeatherArgs,
+    DailyForecast,
+    ForecastResponse,
     GeocodingResponse,
+    OpenWeatherArgs,
     TempUnit,
     Theme,
 } from './utils/types';
-import { join } from 'path';
 
 const currentHeight = 320;
 const forecastHeight = 140;
@@ -36,6 +36,7 @@ const canvasWidth = 520;
 let canvasHeight: number;
 
 let dayTime: boolean;
+let preferState: boolean;
 
 let tempUnit: TempUnit;
 let tempLabel: string;
@@ -60,6 +61,7 @@ const createWeatherImage = async (args: OpenWeatherArgs) => {
         tempUnit,
         withForecast,
         theme,
+        preferState,
     } = args;
 
     if (stateCode && !countryCode) {
@@ -74,7 +76,8 @@ const createWeatherImage = async (args: OpenWeatherArgs) => {
         forecastResponse,
         withForecast,
         theme || {},
-        tempUnit ? tempUnit : getTempUnitForCountry(geocodedCountryCode)
+        tempUnit ? tempUnit : getTempUnitForCountry(geocodedCountryCode),
+        preferState,
     );
 
     const canvas = createCanvas(canvasWidth, canvasHeight);
@@ -95,7 +98,7 @@ const createWeatherImage = async (args: OpenWeatherArgs) => {
 const drawCurrent = async (
     ctx: SKRSContext2D,
     geocodingResponse: GeocodingResponse,
-    forecastResponse: any
+    forecastResponse: ForecastResponse
 ) => {
     const { name, state, country } = geocodingResponse;
     const { current, daily, timezone } = forecastResponse;
@@ -145,7 +148,7 @@ const drawCurrent = async (
     leftPos = 22;
 
     ctx.font = font(10);
-    const title: string = `${name}, ${country}`;
+    const title: string = (preferState && state) ? `${name}, ${state}` : `${name}, ${country}`;
     applyText(ctx, title, canvasWidth * (2 / 3) - leftPos, 32);
     ctx.fillText(title, leftPos, 62);
 
@@ -254,7 +257,7 @@ const drawCurrent = async (
     ctx.fillText(sunset, nextLeftPos + 36, 251);
 };
 
-const drawForecast = async (ctx: SKRSContext2D, forecastResponse: any) => {
+const drawForecast = async (ctx: SKRSContext2D, forecastResponse: ForecastResponse) => {
     const { daily, timezone } = forecastResponse;
 
     for (let i = 0; i < 4; i++) {
@@ -264,7 +267,7 @@ const drawForecast = async (ctx: SKRSContext2D, forecastResponse: any) => {
 
 const drawForecastBox = async (
     ctx: SKRSContext2D,
-    dayForecast: any,
+    dayForecast: DailyForecast,
     timezone: string,
     boxNum: number
 ) => {
@@ -347,10 +350,11 @@ const drawBackground = async (
 };
 
 const setupVariables = async (
-    forecastResponse: any,
+    forecastResponse: ForecastResponse,
     withForecast: boolean = false,
     theme: Theme,
-    tempUnit: TempUnit
+    _tempUnit: TempUnit,
+    _preferState: boolean = false,
 ) => {
     const {
         dayTime: dt,
@@ -379,6 +383,9 @@ const setupVariables = async (
     forecastBoxDivider = fboxd;
     forecastSymbolColour = fsc;
 
+    preferState = _preferState;
+
+    tempUnit = _tempUnit;
     tempLabel = isImperial(tempUnit) ? '°F' : '°C';
 
     canvasHeight = withForecast
@@ -386,4 +393,5 @@ const setupVariables = async (
         : currentHeight;
 };
 
-export { OpenWeatherArgs, createWeatherImage, Theme as ThemeInput, Theme };
+export { OpenWeatherArgs, Theme, Theme as ThemeInput, createWeatherImage };
+

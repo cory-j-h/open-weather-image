@@ -24,7 +24,7 @@ $ npm install open-weather-image
 
 # Usage
 
-First you will need to register and account on OpenWeather to obtain an API key
+First you will need to register an account on OpenWeather to obtain an API key
 
 [How to Start OpenWeather](https://openweathermap.org/appid)
 
@@ -33,7 +33,7 @@ With Metric Units
 ```ts
 import { createWeatherImage } from 'open-weather-image';
 
-const image = await createWeatherImageToday({
+const image = await createWeatherImage({
     key: 'YOUR API KEY',
     cityName: 'Adelaide',
     tempUnit: 'metric',
@@ -45,16 +45,19 @@ With Imperial Units
 ```ts
 import { createWeatherImage } from 'open-weather-image';
 
-const image = await createWeatherImageToday({
+const image = await createWeatherImage({
     key: 'YOUR API KEY',
     cityName: 'Springfield',
     stateCode: 'OR',
     countryCode: 'US',
     tempUnit: 'imperial',
+    preferState: true
 });
 ```
 
 > Omitting the `tempUnit` property will use the preferred temperature unit of the target country.
+>
+> When set to `true`, the `preferState` property will show the state, if available, on the resulting image instead of the country.
 
 With Forecast
 
